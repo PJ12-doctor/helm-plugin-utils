@@ -3,6 +3,7 @@ package utils
 import (
 	"bytes"
 	"compress/gzip"
+	ctx "context"
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
@@ -25,7 +26,6 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/azure"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/openstack"
 )
 
 type ListOptions struct {
@@ -66,7 +66,7 @@ func ListReleasesWithKubeConfig(o ListOptions, kubeConfigFile, context string) (
 	storage := GetTillerStorageWithKubeConfig(o.TillerNamespace, kubeConfigFile, context)
 	switch storage {
 	case "secrets":
-		secrets, err := clientSet.CoreV1().Secrets(o.TillerNamespace).List(metav1.ListOptions{
+		secrets, err := clientSet.CoreV1().Secrets(o.TillerNamespace).List(ctx.Background(), metav1.ListOptions{
 			LabelSelector: o.TillerLabel,
 		})
 		if err != nil {
@@ -80,7 +80,7 @@ func ListReleasesWithKubeConfig(o ListOptions, kubeConfigFile, context string) (
 			releasesData = append(releasesData, *releaseData)
 		}
 	case "configmaps":
-		configMaps, err := clientSet.CoreV1().ConfigMaps(o.TillerNamespace).List(metav1.ListOptions{
+		configMaps, err := clientSet.CoreV1().ConfigMaps(o.TillerNamespace).List(ctx.Background(), metav1.ListOptions{
 			LabelSelector: o.TillerLabel,
 		})
 		if err != nil {
@@ -240,7 +240,7 @@ func GetTillerStorageWithKubeConfig(tillerNamespace, kubeConfigFile, context str
 	listOptions := metav1.ListOptions{
 		LabelSelector: "name=tiller",
 	}
-	pods, err := coreV1.Pods(tillerNamespace).List(listOptions)
+	pods, err := coreV1.Pods(tillerNamespace).List(ctx.Background(), listOptions)
 	if err != nil {
 		log.Fatal(err)
 	}
